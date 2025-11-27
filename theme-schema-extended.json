@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Extended Theme Configuration with FontAwesome Integration",
+  "description": "Extended theme configuration supporting FontAwesome icons, Shoelace and Web Awesome design systems",
+  "type": "object",
+  "properties": {
+    "fontawesome": {
+      "description": "FontAwesome Pro integration configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enable FontAwesome integration",
+          "type": "boolean",
+          "default": true
+        },
+        "family": {
+          "description": "FontAwesome font family name",
+          "type": "string",
+          "default": "Font Awesome 6 Pro"
+        },
+        "default_weight": {
+          "description": "Default FontAwesome weight",
+          "type": "string",
+          "enum": ["thin", "light", "regular", "solid", "duotone"],
+          "default": "regular"
+        },
+        "classic_thin_enabled": {
+          "description": "Enable classic thin font style",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "default": {
+        "enabled": true,
+        "family": "Font Awesome 6 Pro",
+        "default_weight": "regular",
+        "classic_thin_enabled": true
+      }
+    },
+    "icons": {
+      "description": "Icon system configuration",
+      "type": "object",
+      "properties": {
+        "library": {
+          "description": "Primary icon library to use",
+          "type": "string",
+          "enum": ["lucide", "fontawesome", "dual"],
+          "default": "dual"
+        },
+        "fallback": {
+          "description": "Fallback icon library",
+          "type": "string",
+          "enum": ["lucide", "fontawesome"],
+          "default": "lucide"
+        },
+        "fontawesome_weight": {
+          "description": "Default FontAwesome weight for icons",
+          "type": "string",
+          "enum": ["thin", "light", "regular", "solid", "duotone"],
+          "default": "regular"
+        },
+        "size_conversion": {
+          "description": "Enable automatic size conversion between icon systems",
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "default": {
+        "library": "dual",
+        "fallback": "lucide",
+        "fontawesome_weight": "regular",
+        "size_conversion": true
+      }
+    },
+    "design_system": {
+      "description": "Design system target for this theme",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Design system name",
+          "type": "string",
+          "enum": ["current", "shoelace", "web_awesome"]
+        },
+        "version": {
+          "description": "Design system version",
+          "type": "string"
+        },
+        "compatibility_mode": {
+          "description": "Compatibility mode for design system",
+          "type": "string",
+          "enum": ["strict", "loose", "hybrid"],
+          "default": "hybrid"
+        }
+      },
+      "default": {
+        "name": "current",
+        "version": "1.0.0",
+        "compatibility_mode": "hybrid"
+      }
+    }
+  }
+}
