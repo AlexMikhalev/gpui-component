@@ -2835,6 +2835,7 @@ dependencies = [
  "chrono",
  "enum-iterator",
  "gpui",
+ "gpui-component-assets",
  "gpui-component-macros",
  "gpui-macros",
  "html5ever 0.27.0",

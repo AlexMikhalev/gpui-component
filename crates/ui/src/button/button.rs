@@ -4,6 +4,7 @@ use crate::{
     h_flex, spinner::Spinner, tooltip::Tooltip, ActiveTheme, Colorize as _, Disableable,
     FocusableExt as _, Icon, IconName, Selectable, Sizable, Size, StyleSized, StyledExt,
 };
+use gpui_component_assets::{IconConfig, IconSource, FontAwesomeWeight, IconUtils};
 use gpui::{
     div, prelude::FluentBuilder as _, px, relative, Action, AnyElement, App, ClickEvent, Corners,
     Div, Edges, ElementId, Hsla, InteractiveElement, Interactivity, IntoElement, MouseButton,
@@ -200,6 +201,7 @@ pub struct Button {
     on_hover: Option<Rc<dyn Fn(&bool, &mut Window, &mut App)>>,
     loading: bool,
     loading_icon: Option<Icon>,
+    icon_config: Option<IconConfig>,
 
     tab_index: isize,
     tab_stop: bool,
@@ -238,6 +240,7 @@ impl Button {
             outline: false,
             children: Vec::new(),
             loading_icon: None,
+            icon_config: None,
             dropdown_caret: false,
             tab_index: 0,
             tab_stop: true,
@@ -357,6 +360,12 @@ impl Button {
     /// Set to show a dropdown caret icon at the end of the button.
     pub fn dropdown_caret(mut self, dropdown_caret: bool) -> Self {
         self.dropdown_caret = dropdown_caret;
+        self
+    }
+
+    /// Set icon configuration for dual Lucide/FontAwesome support.
+    pub fn icon_config(mut self, config: IconConfig) -> Self {
+        self.icon_config = Some(config);
         self
     }
 
@@ -573,7 +582,14 @@ impl RenderOnce for Button {
                     })
                     .when(!self.loading, |this| {
                         this.when_some(self.icon, |this, icon| {
-                            this.child(icon.with_size(icon_size))
+                            // Apply icon configuration if available
+                            let icon = if let Some(config) = &self.icon_config {
+                                // Apply icon configuration for dual Lucide/FontAwesome support
+                                icon.icon_config(config.clone())
+                            } else {
+                                icon
+                            };
+                            this.child(icon)
                         })
                     })
                     .when(self.loading, |this| {

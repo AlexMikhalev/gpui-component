@@ -54,6 +54,7 @@ tree-sitter-languages = [
 [dependencies]
 anyhow.workspace = true
 gpui = { workspace = true }
+gpui-component-assets = { workspace = true }
 gpui-component-macros = { workspace = true }
 gpui-macros.workspace = true
 notify.workspace = true

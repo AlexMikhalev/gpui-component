@@ -2,7 +2,7 @@ use crate::{ActiveTheme, Sizable, Size};
 use gpui::{
     prelude::FluentBuilder as _, svg, AnyElement, App, AppContext, Context, Entity, Hsla,
     IntoElement, Radians, Render, RenderOnce, SharedString, StyleRefinement, Styled, Svg,
-    Transformation, Window,
+    Transformation, Window, div, px, ParentElement,
 };
 
 /// Types implementing this trait can automatically be converted to [`Icon`].
@@ -232,6 +232,8 @@ pub struct Icon {
     text_color: Option<Hsla>,
     size: Option<Size>,
     rotation: Option<Radians>,
+    icon_config: Option<IconConfig>,
+    use_fontawesome: bool,
 }
 
 impl Default for Icon {
@@ -243,6 +245,8 @@ impl Default for Icon {
             text_color: None,
             size: None,
             rotation: None,
+            icon_config: None,
+            use_fontawesome: false,
         }
     }
 }
@@ -254,6 +258,8 @@ impl Clone for Icon {
         this.rotation = self.rotation;
         this.size = self.size;
         this.text_color = self.text_color;
+        this.icon_config = self.icon_config.clone();
+        this.use_fontawesome = self.use_fontawesome;
         this
     }
 }
@@ -296,6 +302,68 @@ impl Icon {
             .with_transformation(Transformation::rotate(radians));
         self
     }
+
+    /// Set icon configuration for dual Lucide/FontAwesome support
+    pub fn icon_config(mut self, config: IconConfig) -> Self {
+        self.icon_config = Some(config);
+        self.use_fontawesome = true;
+        self
+    }
+
+    /// Extract icon name from path
+    fn extract_icon_name(&self) -> String {
+        self.path
+            .to_string()
+            .strip_prefix("icons/")
+            .unwrap_or(&self.path.to_string())
+            .strip_suffix(".svg")
+            .unwrap_or(&self.path.to_string())
+            .to_string()
+    }
+
+    /// Render FontAwesome icon as text
+    fn render_fontawesome(
+        &self,
+        fa_icon: gpui_component_assets::FontAwesomeIcon,
+        text_color: Hsla,
+        text_size: gpui::Pixels,
+        has_base_size: bool,
+        window: &mut Window,
+        _cx: &mut App,
+    ) -> impl IntoElement {
+        let font_size = if has_base_size {
+            text_size
+        } else {
+            match self.size {
+                Some(Size::Size(px)) => px,
+                Some(Size::XSmall) => px(12.0),
+                Some(Size::Small) => px(14.0),
+                Some(Size::Medium) => px(16.0),
+                Some(Size::Large) => px(24.0),
+                None => text_size,
+            }
+        };
+
+        div()
+            .flex_shrink_0()
+            .text_color(text_color)
+            .font_family("Font Awesome 6 Pro")
+            .font_weight(fa_icon.weight.as_font_weight())
+            .size(font_size)
+            .child(fa_icon.unicode)
+            .when_some(self.size, |this, size| match size {
+                Size::Size(px) => this.size(px),
+                Size::XSmall => this.size_3(),
+                Size::Small => this.size_3p5(),
+                Size::Medium => this.size_4(),
+                Size::Large => this.size_6(),
+            })
+            .when_some(self.rotation, |this, rotation| {
+                this.with_transformation(Transformation::rotate(rotation))
+            })
+    }
+
+
 }
 
 impl Styled for Icon {
@@ -317,11 +385,29 @@ impl Sizable for Icon {
 }
 
 impl RenderOnce for Icon {
-    fn render(self, window: &mut Window, _cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let text_color = self.text_color.unwrap_or_else(|| window.text_style().color);
         let text_size = window.text_style().font_size.to_pixels(window.rem_size());
         let has_base_size = self.style.size.width.is_some() || self.style.size.height.is_some();
 
+        // Check if we should use FontAwesome
+        if self.use_fontawesome {
+            if let Some(config) = &self.icon_config {
+                let icon_name = self.extract_icon_name();
+                if let Some(source) = IconUtils::select_best_source(&icon_name, config) {
+                    if source == IconSource::FontAwesome {
+                        if let Some(fa_icon) = IconMapping::get_fontawesome_equivalent(
+                            &icon_name, 
+                            config.fontawesome_weight.unwrap_or(FontAwesomeWeight::Regular)
+                        ) {
+                            return self.render_fontawesome(fa_icon, text_color, text_size, has_base_size, window, cx);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback to SVG rendering
         let mut base = self.base;
         *base.style() = self.style;
 
@@ -351,6 +437,24 @@ impl Render for Icon {
         let text_size = window.text_style().font_size.to_pixels(window.rem_size());
         let has_base_size = self.style.size.width.is_some() || self.style.size.height.is_some();
 
+        // Check if we should use FontAwesome
+        if self.use_fontawesome {
+            if let Some(config) = &self.icon_config {
+                let icon_name = self.extract_icon_name();
+                if let Some(source) = IconUtils::select_best_source(&icon_name, config) {
+                    if source == IconSource::FontAwesome {
+                        if let Some(fa_icon) = IconMapping::get_fontawesome_equivalent(
+                            &icon_name, 
+                            config.fontawesome_weight.unwrap_or(FontAwesomeWeight::Regular)
+                        ) {
+                            return self.render_fontawesome(fa_icon, text_color, text_size, has_base_size, window, cx);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback to SVG rendering
         let mut base = svg().flex_none();
         *base.style() = self.style.clone();
 
